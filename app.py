@@ -6,10 +6,15 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from flask_cors import CORS
 from pydub import AudioSegment
 import tempfile
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 CORS(app)
-# Version: 1.0.1 - Built with GitHub Actions
+# Version: 2.0 - Automated deployment via GitHub Actions + AWS SSM
+APP_VERSION = "2.0"
+DEPLOY_METHOD = "GitHub Actions + AWS SSM"
+STARTED_AT = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
 # Global variables for playlist management
 current_directory = None
 current_playlist = [] # Stores full paths on server
@@ -142,9 +147,22 @@ def serve_audio_segment():
 @app.route('/')
 def index():
     """
-    Renders the main HTML page for the client-side audio player.
+    Renders the main HTML page, plus deployment info for the banner.
     """
-    return render_template('index.html') 
+    return render_template('index.html',
+                              app_version=APP_VERSION,
+                              deploy_method=DEPLOY_METHOD,
+                              started_at=STARTED_AT) 
+
+@app.route('/health')
+def health():
+    return jsonify({
+        'status': 'healthy',
+        'version': APP_VERSION,
+        'deployment_method': 'automated',
+        'started_at': STARTED_AT,
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    })
 
 @app.route('/select_directory', methods=['POST'])
 def select_directory():
